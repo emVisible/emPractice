@@ -1,4 +1,4 @@
-public class Book extends Shape{
+public class Book extends sShape{
     public String id;
     public String name;
     public String author;
@@ -12,7 +12,7 @@ public class Book extends Shape{
         this.price = source.price;
     }
     @Override
-    public Shape cloneBook() {
+    public sShape cloneBook() {
         return new Book(this);
     }
     public void getMsg(){

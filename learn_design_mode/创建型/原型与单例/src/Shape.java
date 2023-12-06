@@ -1,10 +1,10 @@
-public abstract class Shape {
+public abstract class sShape {
     public String id;
     public String name;
     public String author;
     public String price;
-    public Shape(){}
-    public Shape(Shape source){
+    public sShape(){}
+    public sShape(sShape source){
         if (source != null) {
             this.id = source.id;
             this.name = source.name;
@@ -13,5 +13,5 @@ public abstract class Shape {
         }
     }
 
-    public abstract Shape cloneBook();
+    public abstract sShape cloneBook();
 }
