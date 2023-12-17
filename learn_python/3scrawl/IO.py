@@ -32,6 +32,9 @@ class Crawler:
     self.data = b''
     self.sock = socket.socket()
     self.sock.setblocking(False)
+  '''
+    连接服务器, 注册读取事件
+  '''
   def fetch(self):
     try:
       self.sock.connect((self.url.netloc, 80))
@@ -40,7 +43,7 @@ class Crawler:
     selector.register(self.sock.fileno(), EVENT_WRITE, self.writable)
 
   '''
-    发送请求
+    注册写入事件, 发送GET请求
   '''
   def writable(self, key):
     # 注销事件
@@ -54,7 +57,7 @@ class Crawler:
     selector.register(self.sock.fileno(), EVENT_READ, self.readable)
 
   '''
-    接收请求
+    接收请求, 写入文件到本地
   '''
   def readable(self, key):
     d = self.sock.recv(102400)
