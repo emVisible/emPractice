@@ -1,8 +1,13 @@
-import time
+'''
+  多线程 阻塞
+  并发量越大, 性能下降越严重
+'''
+from collections.abc import Callable, Iterable, Mapping
 import threading
-import socket
 import os
+import socket
 from urllib.parse import urlparse
+
 
 urls = ['https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/9bc51bc53f634bf79b5de5c8b9810817~tplv-k3u1fbpfcp-watermark.image',
         'https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2b95ac8571ba403180743495ed56e492~tplv-k3u1fbpfcp-watermark.image',
@@ -17,52 +22,55 @@ urls = ['https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/9bc51bc53f634bf79b5de
 ]
 
 class Crawler(threading.Thread):
-  def __init__(self, url) -> None:
-    threading.Thread.__init__(self)
-    self.url = url
-    self.data = b''
+  LIMIT_SIZE = 1024
+  def __init__(self, url):
+    threading.Thread.__init__(self=self)
+    self.data = b""
     self.sock = socket.socket()
-  def run(self):
-    url = urlparse(self.url)
-    self.sock.connect((url.netloc, 80))
-    data = f"GET {url.path} HTTP/1.1\r\nHOST: {url.netloc}\r\nConnection: close\r\n\r\n"
-    self.sock.send(data.encode())
+    self._url = url
+    self.url = urlparse(self._url)
+  def run(self) -> None:
+    self.createDir()
+    self.sendRequest()
+    self.recieveData()
+    self.saveFile()
+    self.closeSock()
 
+  def createDir(self) -> None:
+    os.system("mkdir -p __temp")
+
+  def sendRequest(self):
+    self.sock.connect((self.url.netloc, 80))
+    request = f"GET {self.url.path} HTTP/1.1\r\nHOST: {self.url.netloc}\r\nConnection: close\r\n\r\n".encode()
+    self.sock.send(request)
+  def closeSock(self):
+    self.sock.close()
+
+  def recieveData(self):
     while True:
-      d = self.sock.recv(1024)
-      if d:
-        self.data += d
+      data = self.sock.recv(self.LIMIT_SIZE)
+      if data:
+        self.data += data
       else:
-        print("[System] 爬取完成")
+        print(f"[Request] {self.url[0:8]}... 接收成功")
         break
 
-    with open(f"{os.getcwd()}/t_pictures/{url.path[20:]}", "wb") as f:
+  def saveFile(self) ->None:
+    with open(f"__temp/{self.url.path[20:]}", "wb") as f:
       f.write(self.data.split(b'\r\n\r\n')[1])
-    print("文件保存完毕")
+    print(f"[Save] {self.url[0:8]}... 保存成功")
 
-    self.sock.close()
-    print("[System] 链接关闭")
 
 def main():
-  start_time = time.time()
-  url_list = []
-  index = 1
-
-  # 线程并发
+  instances = []
   for url in urls:
     crawler = Crawler(url)
-    url_list.append(crawler)
+    instances.append(crawler)
     crawler.start()
-    index += 1
 
-  # 等待所有线程结束
-  for crawler in url_list:
-    crawler.join()
-
-  end_time = time.time()
-  consume_time = end_time - start_time
-  print(f"耗时: {consume_time} s")
-  print(f"平均耗时: {consume_time / index} s")
+  for ins in instances:
+    ins.join()
+  print("---爬取完毕---")
 
 if __name__ == '__main__':
   main()

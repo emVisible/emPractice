@@ -1,8 +1,11 @@
+'''
+  异步IO
+  事件循环 + 回调
+'''
+from selectors import DefaultSelector, EVENT_READ, EVENT_WRITE
 import os
-import time
 import socket
 from urllib.parse import urlparse
-from selectors import DefaultSelector, EVENT_READ, EVENT_WRITE
 
 urls = ['https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/9bc51bc53f634bf79b5de5c8b9810817~tplv-k3u1fbpfcp-watermark.image',
         'https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2b95ac8571ba403180743495ed56e492~tplv-k3u1fbpfcp-watermark.image',
@@ -15,89 +18,82 @@ urls = ['https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/9bc51bc53f634bf79b5de
         'https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/095c342a796c411cad1800396746bdaf~tplv-k3u1fbpfcp-watermark.image',
         'https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/d3769e4d468a4f64a1e2879f94ad742b~tplv-k3u1fbpfcp-watermark.image'
 ]
-length = len(urls)
 
+class Stop():
+  def __init__(self) -> None:
+    self.is_stop = False
+  def stop(self)->None:
+    self.is_stop = True
+
+signal = Stop()
 selector = DefaultSelector()
 
-class Signal:
-  def __init__(self) -> None:
-    self.signal = False
-
-signal = Signal()
-
-class Crawler:
+class Crawler():
+  LIMIT_SIZE = 1024
   def __init__(self, url) -> None:
-    self.url = urlparse(url)
-    self._url = url
-    self.data = b''
     self.sock = socket.socket()
     self.sock.setblocking(False)
-  '''
-    连接服务器, 注册读取事件
-  '''
+
+    self.data = b""
+    self._url = url
+    self.url = urlparse(self._url)
   def fetch(self):
+
     try:
       self.sock.connect((self.url.netloc, 80))
     except BlockingIOError:
       pass
-    selector.register(self.sock.fileno(), EVENT_WRITE, self.writable)
 
-  '''
-    注册写入事件, 发送GET请求
-  '''
-  def writable(self, key):
-    # 注销事件
+    # 注册到异步事件中
+    selector.register(self.sock.fileno(), EVENT_WRITE, self.write)
+  def write(self, key):
     selector.unregister(key.fd)
-    print("链接成功")
 
-    data = f"GET {self.url.path} HTTP/1.1\r\nHOST: {self.url.netloc}\r\nConnection: close\r\n\r\n".encode()
-    self.sock.send(data)
-    print("发送成功")
+    request = f"GET {self.url.path} HTTP/1.1\r\nHOST: {self.url.netloc}\r\nConnection: close\r\n\r\n".encode()
+    self.sock.send(request)
 
-    selector.register(self.sock.fileno(), EVENT_READ, self.readable)
+    selector.register(self.sock.fileno(), EVENT_READ, self.read)
 
-  '''
-    接收请求, 写入文件到本地
-  '''
-  def readable(self, key):
-    d = self.sock.recv(102400)
-    if d:
-      self.data += d
+  def read(self, key):
+    data = self.sock.recv(102400)
+    if data:
+      self.data += data
     else:
       selector.unregister(key.fd)
-      print(f"读取成功: {key.fd}")
-
-      with open(f"{os.getcwd()}/IO/{self.url.path[20:]}", 'wb') as f:
-        f.write(self.data.split(b'\r\n\r\n')[1])
-
-      self.sock.close()
+      self.saveFile()
+      self.closeSock()
       urls.remove(self._url)
-
+      # 如果所有的url都处理完毕, 设置停止信号为True
       if not urls:
-        signal.signal = True
+        signal.stop()
 
-def loop():
-  while not signal.signal:
+  def saveFile(self) ->None:
+    with open(f"__temp/{self.url.path[20:]}", "wb") as f:
+      f.write(self.data.split(b'\r\n\r\n')[1])
+    print(f"[Save] {self.url[0:8]}... 保存成功")
+  def closeSock(self):
+    self.sock.close()
+
+# 事件循环
+def eventLoop():
+  while not signal.is_stop:
     events = selector.select()
-
-    print(events)
-
-    for event_key, _ in events:
+    for event_key,_ in events:
       callback = event_key.data
       callback(event_key)
+def createDir() -> None:
+  os.system("mkdir -p __temp")
 
 def main():
-  start_time = time.time()
+  # 注册-Regist
+  createDir()
   for url in urls:
     crawler = Crawler(url)
     crawler.fetch()
-  loop()
-  end_time = time.time()
-  consume_time = end_time - start_time
-  print(f"耗时: {consume_time} s")
-  print(f"平均耗时: {consume_time / length} s")
+
+  # 处理-Handle
+  eventLoop()
+  print("[System] 事件循环处理完毕")
 
 if __name__ == '__main__':
   main()
-
-

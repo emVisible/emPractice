@@ -1,10 +1,9 @@
 '''
-  同步阻塞爬虫
+  单线程, 阻塞
 '''
-import time
-import pathlib
-from urllib.parse import urlparse
 import socket
+import os
+from urllib.parse import urlparse
 
 urls = ['https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/9bc51bc53f634bf79b5de5c8b9810817~tplv-k3u1fbpfcp-watermark.image',
         'https://p1-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/2b95ac8571ba403180743495ed56e492~tplv-k3u1fbpfcp-watermark.image',
@@ -18,48 +17,54 @@ urls = ['https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/9bc51bc53f634bf79b5de
         'https://p6-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/d3769e4d468a4f64a1e2879f94ad742b~tplv-k3u1fbpfcp-watermark.image'
 ]
 
-class Scrawl:
-  def __init__(self, url) -> None:
-    self.url = url
-    self.data = b''
+class Crawler():
+  LIMIT_SIZE = 1024
+  def __init__(self, url:str) -> None:
     self.sock = socket.socket()
-  def fetch(self):
-    url = urlparse(self.url)
-    # 通过80端口链接网址
-    self.sock.connect((url.netloc, 80))
-    print("[System] 链接成功")
+    self.data = b""
+    self._url = url
+    self.url = urlparse(url)
 
-    data = f"GET {url.path} HTTP/1.1\r\nHOST: {url.netloc}\r\nConnection: close\r\n\r\n"
-    # 发送请求
-    self.sock.send(data.encode())
+  def fetch(self) -> None:
+    self.createDir()
+    self.sendRequest()
+    self.recieveData()
+    self.saveFile()
+    self.closeSock()
 
-    # 接收数据
-    while True:
-      d = self.sock.recv(1024)
-      if d:
-        self.data += d
-      else:
-        print("接收成功")
-        break
-    # 文件操作
-    print(url.path)
-    with open(f"{pathlib.Path().cwd()}\\pictures\\{url.path[20:]}", 'wb') as f:
-      f.write(self.data.split(b'\r\n\r\n')[1])
-    print("[System] 文件保存成功")
+  def createDir(self) -> None:
+    os.system("mkdir -p __temp")
+
+  def sendRequest(self):
+    self.sock.connect((self.url.netloc, 80))
+    request = f"GET {self.url.path} HTTP/1.1\r\nHOST: {self.url.netloc}\r\nConnection: close\r\n\r\n".encode()
+    self.sock.send(request)
+  def closeSock(self):
     self.sock.close()
 
+  def recieveData(self):
+    while True:
+      data = self.sock.recv(self.LIMIT_SIZE)
+      if data:
+        self.data += data
+      else:
+        print(f"[Request] {self.url[0:8]}... 接收成功")
+        break
+
+  def saveFile(self) ->None:
+    with open(f"__temp/{self.url.path[20:]}", "wb") as f:
+      f.write(self.data.split(b'\r\n\r\n')[1])
+    print(f"[Save] {self.url[0:8]}... 保存成功")
+
 def main():
-  start_time = time.time()
-  index = 1
-  for url in urls:
-    scrawl = Scrawl(url)
-    scrawl.fetch()
-    print(f"[System] 已完成第{index}个获取")
-    index += 1
-  end_time = time.time()
-  consume_time = end_time - start_time
-  print(f"耗时: {consume_time} s")
-  print(f"平均耗时: {consume_time / index} s")
+  try:
+    for url in urls:
+      crawler = Crawler(url=url)
+      crawler.fetch()
+  except IOError:
+    print("[System] Error")
+  print("---爬取完毕---")
 
 if __name__ == '__main__':
   main()
+
