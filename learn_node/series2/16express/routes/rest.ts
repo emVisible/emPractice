@@ -19,4 +19,26 @@ export default function restInit(app: Express) {
   app.delete('/api/delete', (req, res) => {
     res.send("delete")
   })
+
+  /**
+   * 链式路由
+   *   避免重复的路由名称
+  */
+  app.route('/chain')
+    .all((req, res, next) => {
+      console.log("PRE-PROCESSING")
+      next()
+    })
+    .get((req, res) => {
+      res.send("===GET===")
+    })
+    .post((req, res) => {
+      res.send("===POST===")
+    })
+    .put((req, res) => {
+      res.send("===PUT===")
+    })
+    .delete((req, res) => {
+      res.send("===DELETE===")
+    })
 }
