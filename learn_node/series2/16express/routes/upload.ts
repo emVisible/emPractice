@@ -1,15 +1,14 @@
-import multer from 'multer'
-import fs from 'fs'
-import path from 'path'
 import express from 'express'
+import fs from 'fs'
+import multer from 'multer'
 
 const router = express.Router()
 
 const storage = multer.diskStorage({
   destination(req: express.Request, file, cb) {
-    const dir = "./upload"
+    const dir = "./uploads"
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-    cb(null, path.resolve(dir))
+    cb(null, "./uploads")
   },
   filename(req: express.Request, file, cb) {
     const extName = file.filename.split('.').pop()
@@ -37,5 +36,6 @@ router.post('/upload/image', upload.single('file'),(req, res)=>{
     data: req.file
   })
 })
+
 
 export default router
