@@ -1,19 +1,47 @@
-import { User } from "./seed"
-async function createUser(name: string, age: number) {
-  const user = await User.create({ name, age })
+import { Sequelize, INTEGER, STRING } from 'sequelize'
+const sequelize = new Sequelize("mysql://root:preview@localhost:3306/node_test")
+
+const User = sequelize.define(
+  'user',
+  {
+    id: {
+      type: INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+      allowNull: false
+    },
+    name: {
+      type: STRING(50),
+      allowNull: false
+    },
+    sex: {
+      type: STRING(20),
+      allowNull: false
+    },
+  },
+  {
+    tableName: 'users',
+    timestamps: false
+  }
+)
+async function createUser(name: string, sex: number) {
+  const user = await User.create({ name, sex })
   console.log('🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹')
   console.log("[System] User created.")
   console.log('🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹🔹')
   return user.toJSON()
 }
+
 async function findAll() {
   const users = await User.findAll()
-  return users.map((user) => user.toJSON())
+  return users.map((user: any) => user.toJSON())
 }
+
 async function findOne(id: number) {
   const user = await User.findByPk(id)
   return user.toJSON()
 }
+
 async function update(id: number, name: string, age: number) {
   const user = await User.findByPk(id)
   if (user) {
@@ -34,6 +62,7 @@ async function deleteOne(id: number) {
   }
   return user
 }
+
 export const dbUser = {
   User,
   createUser,
