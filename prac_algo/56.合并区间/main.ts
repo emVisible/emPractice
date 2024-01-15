@@ -8,7 +8,8 @@ function merge(intervals: number[][]): number[][] {
       res[res.length - 1][1] = Math.max(res[res.length - 1][1], interval[1])
     }
   }
-  return res
+
+  return res;
 };
 const res = merge([[1, 3], [2, 6], [8, 10], [15, 18]])
 console.log('res', res)

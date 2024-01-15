@@ -1,5 +1,5 @@
 import { Sequelize, INTEGER, STRING } from 'sequelize'
-const sequelize = new Sequelize("mysql://root:preview@localhost:3306/node_test")
+const sequelize = new Sequelize("mysql://root:preview32@localhost:3306/__temp")
 
 const User = sequelize.define(
   'user',
