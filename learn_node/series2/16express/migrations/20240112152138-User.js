@@ -12,17 +12,17 @@ module.exports = {
     await queryInterface.createTable('User',
       {
         id: {
-          type: INTEGER,
+          type: Sequelize.INTEGER,
           primaryKey: true,
           autoIncrement: true,
           allowNull: false
         },
         name: {
-          type: STRING(50),
+          type: Sequelize.STRING(50),
           allowNull: false
         },
         age: {
-          type: INTEGER,
+          type: Sequelize.INTEGER,
           allowNull: false
         },
       },

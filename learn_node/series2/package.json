@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "@types/node": "^20.10.7"
+  },
+  "dependencies": {
+    "em_npm_package_0": "link:/home/young/code/_project/emPractice/learn_node/series2/17package"
   }
 }
