@@ -1,7 +1,12 @@
 function merge(intervals: number[][]): number[][] {
-  const res = [] as number[]
-  for (let i = 0; i < intervals.length - 1; i++) {
-    
+  intervals.sort((a, b) => a[0] - b[0])
+  const res = [] as number[][]
+  for (const interval of intervals) {
+    if (!res.length || interval[0] > res[res.length - 1][1]) {
+      res.push(interval)
+    } else {
+      res[res.length - 1][1] = Math.max(res[res.length - 1][1], interval[1])
+    }
   }
   return res
 };
